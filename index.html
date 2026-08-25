@@ -619,6 +619,54 @@
   .hours-row span:first-child{color:var(--off-white-dim); font-weight:300;}
   .hours-row span:last-child{color:var(--off-white); font-weight:500;}
 
+  /* ---------- Maps Media Section ---------- */
+  .media-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+    gap:20px;
+  }
+  .media-card{
+    position:relative;
+    border-radius:20px;
+    overflow:hidden;
+    background:var(--charcoal-2);
+    border:1px solid var(--line-soft);
+    aspect-ratio:4/3;
+    transition:transform 0.4s ease, border-color 0.4s ease;
+  }
+  .media-card:hover{
+    transform:scale(1.02);
+    border-color:var(--gold);
+  }
+  .media-card img, .media-card video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+  .media-badge{
+    position:absolute;
+    top:12px;
+    right:12px;
+    background:rgba(10,10,11,0.75);
+    backdrop-filter:blur(8px);
+    border:1px solid var(--line-soft);
+    color:var(--off-white);
+    font-size:11px;
+    padding:4px 10px;
+    border-radius:100px;
+    font-weight:500;
+  }
+  .media-caption{
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    padding:20px 16px 14px;
+    background:linear-gradient(to top, rgba(10,10,11,0.9), transparent);
+    font-size:13px;
+    color:var(--off-white-dim);
+  }
+
   /* ---------- Footer ---------- */
   footer{
     border-top:1px solid var(--line-soft);
@@ -692,6 +740,7 @@
       <li><a href="#tradition">The Tradition</a></li>
       <li><a href="#menu">Menu</a></li>
       <li><a href="#location">Location</a></li>
+      <li><a href="#gallery">Recent Photos</a></li>
       <li><a href="#reserve" class="btn-pill btn-gold nav-cta">Order / Table Booking</a></li>
     </ul>
     <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
@@ -872,6 +921,41 @@
     </div>
   </section>
 
+  <!-- RECENT GOOGLE MAPS PHOTOS & VIDEOS -->
+  <section id="gallery">
+    <div class="container">
+      <div class="section-head reveal">
+        <p class="eyebrow center">COMMUNITY & REVIEWS</p>
+        <h2>Recently Shared on Google Maps</h2>
+        <p>Recent highlights, photos, and atmosphere captured live by our patrons on Google Maps.</p>
+      </div>
+
+      <div class="media-grid reveal">
+        <div class="media-card">
+          <img src="https://raw.githubusercontent.com/Tototkitfo/Totot-kitfo/main/caption.jpg" alt="Recent customer dining experience">
+          <span class="media-badge">📷 Photo</span>
+          <div class="media-caption">Traditional Setup & Dining Space</div>
+        </div>
+        <div class="media-card">
+          <img src="https://raw.githubusercontent.com/Tototkitfo/Totot-kitfo/main/Gomen_besiga.jpg" alt="Recent Gomen Besiga post">
+          <span class="media-badge">📷 Photo</span>
+          <div class="media-caption">Fresh Gomen Besiga Plate</div>
+        </div>
+        <div class="media-card">
+          <img src="kitfo.jpg" alt="Freshly served Kitfo">
+          <span class="media-badge">🎥 Highlights</span>
+          <div class="media-caption">Signature Kitfo Preparation</div>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 48px;" class="reveal">
+        <a href="https://maps.google.com/?q=Totot+Traditional+Restaurant+Gerji+Addis+Ababa" target="_blank" rel="noopener noreferrer" class="btn-pill btn-outline">
+          See All Photos & Videos on Google Maps ↗
+        </a>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <footer>
@@ -1015,4 +1099,3 @@
 
 </body>
 </html>
-
