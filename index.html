@@ -198,7 +198,6 @@
     transform:translateY(-2px);
   }
   
-  /* Updated nav button style to force black text */
   .nav-cta{
     padding:10px 22px;
     font-size:13px;
@@ -786,7 +785,7 @@
             <h3>The Signature Kitfo</h3>
             <p>Finely minced beef, hand-cut to order, gently warmed with authentic mitmita and clarified spiced butter — never overcooked, never rushed.</p>
           </div>
-          <img src="kitfo.jpg" alt="Totot Kitfo Signature Dish" class="bento-img">
+          <img src="https://raw.githubusercontent.com/Tototkitfo/Totot-kitfo/main/caption.jpg" alt="Totot Kitfo Signature Dish" class="bento-img">
         </div>
 
         <!-- 02 Card -->
@@ -942,7 +941,7 @@
           <div class="media-caption">Fresh Gomen Besiga Plate</div>
         </div>
         <div class="media-card">
-          <img src="kitfo.jpg" alt="Freshly served Kitfo">
+          <img src="https://raw.githubusercontent.com/Tototkitfo/Totot-kitfo/main/caption.jpg" alt="Freshly served Kitfo">
           <span class="media-badge">🎥 Highlights</span>
           <div class="media-caption">Signature Kitfo Preparation</div>
         </div>
@@ -964,6 +963,109 @@
     <p>© 2026 Totot Kitfo — Gerji, Addis Ababa.</p>
   </div>
 </footer>
+
+<!-- Firebase SDK Integration -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBz1d6Zehv5y2Jvqbhv9Y3C1gEhrcEkL0I",
+    authDomain: "totot-restaurant-15a8c.firebaseapp.com",
+    projectId: "totot-restaurant-15a8c",
+    storageBucket: "totot-restaurant-15a8c.firebasestorage.app",
+    messagingSenderId: "470989846823",
+    appId: "1:470989846823:web:08ef90ac279a66a65d5102",
+    measurementId: "G-JPPX9B2ST7",
+    databaseURL: "https://totot-restaurant-15a8c-default-rtdb.firebaseio.com"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  let menuData = {
+    specialties: [
+      { name:"Kitfo Leb (Rare)", desc:"Finely minced beef warmed in niter kibbeh and mitmita, served the traditional way.", price:"450 ETB" },
+      { name:"Kitfo Special", desc:"Our signature kitfo plated with ayib and sautéed gomen.", price:"520 ETB" },
+      { name:"Gored Gored", desc:"Cubed beef tossed in spiced clarified butter and mitmita.", price:"480 ETB" },
+      { name:"Dulet", desc:"Minced tripe, liver, and beef sautéed with onion, chili, and herbs.", price:"400 ETB" }
+    ],
+    sides: [
+      { name:"Ayib", desc:"Fresh Ethiopian cottage cheese, cool and mild.", price:"120 ETB" },
+      { name:"Gomen", desc:"Slow-cooked collard greens with garlic and onion.", price:"130 ETB" },
+      { name:"Injera Basket", desc:"Extra warm injera, made fresh daily.", price:"60 ETB" },
+      { name:"Timatim Salad", desc:"Tomato, onion, and jalapeño with a lemon dressing.", price:"110 ETB" }
+    ],
+    drinks: [
+      { name:"Coffee Ceremony", desc:"Traditional roast, grind, and brew, served table-side.", price:"250 ETB" },
+      { name:"Macchiato", desc:"Ethiopian-style espresso macchiato.", price:"90 ETB" },
+      { name:"Tej", desc:"Honey wine, house-fermented.", price:"180 ETB" },
+      { name:"Ambo Water", desc:"Ethiopian natural sparkling mineral water.", price:"70 ETB" }
+    ]
+  };
+
+  let activeTab = 'specialties';
+
+  function renderMenu(tab){
+    const menuGrid = document.getElementById('menuGrid');
+    if (!menuGrid) return;
+    menuGrid.innerHTML = '';
+    const items = menuData[tab] || [];
+    if (items.length === 0) {
+      menuGrid.innerHTML = `<div style="padding: 30px; text-align: center; grid-column: span 2; color: var(--off-white-dim);">No items available in this section.</div>`;
+      return;
+    }
+    items.forEach((item, i) => {
+      const el = document.createElement('div');
+      el.className = 'menu-item';
+      el.style.animationDelay = (i * 0.08) + 's';
+      const formattedPrice = typeof item.price === 'number' ? `${item.price} ETB` : item.price;
+      el.innerHTML = `
+        <div>
+          <div class="menu-item-name">${item.name}</div>
+          <div class="menu-item-desc">${item.desc || item.description || ''}</div>
+        </div>
+        <div class="menu-item-price">${formattedPrice}</div>
+      `;
+      menuGrid.appendChild(el);
+    });
+  }
+
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeTab = btn.dataset.tab;
+      renderMenu(activeTab);
+    });
+  });
+
+  // Listen to live Firebase menu updates
+  const menuRef = ref(db, 'menu');
+  onValue(menuRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      const rawItems = Object.values(data);
+      const updatedMenu = { specialties: [], sides: [], drinks: [] };
+      rawItems.forEach(item => {
+        if (item.available !== false) {
+          const category = (item.category || 'specialties').toLowerCase();
+          if (!updatedMenu[category]) updatedMenu[category] = [];
+          updatedMenu[category].push({
+            name: item.name,
+            desc: item.description || item.desc || '',
+            price: item.price
+          });
+        }
+      });
+      menuData = updatedMenu;
+      renderMenu(activeTab);
+    }
+  });
+
+  renderMenu('specialties');
+</script>
 
 <script>
   // ---------- Nav scroll state ----------
@@ -1006,59 +1108,7 @@
   window.addEventListener('scroll', () => requestAnimationFrame(updateThread), { passive:true });
   initThreadLength();
 
-  // ---------- Menu data & tabs ----------
-  const menuData = {
-    specialties: [
-      { name:"Kitfo Leb (Rare)", desc:"Finely minced beef warmed in niter kibbeh and mitmita, served the traditional way.", price:"450 ETB" },
-      { name:"Kitfo Special", desc:"Our signature kitfo plated with ayib and sautéed gomen.", price:"520 ETB" },
-      { name:"Gored Gored", desc:"Cubed beef tossed in spiced clarified butter and mitmita.", price:"480 ETB" },
-      { name:"Dulet", desc:"Minced tripe, liver, and beef sautéed with onion, chili, and herbs.", price:"400 ETB" }
-    ],
-    sides: [
-      { name:"Ayib", desc:"Fresh Ethiopian cottage cheese, cool and mild.", price:"120 ETB" },
-      { name:"Gomen", desc:"Slow-cooked collard greens with garlic and onion.", price:"130 ETB" },
-      { name:"Injera Basket", desc:"Extra warm injera, made fresh daily.", price:"60 ETB" },
-      { name:"Timatim Salad", desc:"Tomato, onion, and jalapeño with a lemon dressing.", price:"110 ETB" }
-    ],
-    drinks: [
-      { name:"Coffee Ceremony", desc:"Traditional roast, grind, and brew, served table-side.", price:"250 ETB" },
-      { name:"Macchiato", desc:"Ethiopian-style espresso macchiato.", price:"90 ETB" },
-      { name:"Tej", desc:"Honey wine, house-fermented.", price:"180 ETB" },
-      { name:"Ambo Water", desc:"Ethiopian natural sparkling mineral water.", price:"70 ETB" }
-    ]
-  };
-
-  const menuGrid = document.getElementById('menuGrid');
-  const tabBtns = document.querySelectorAll('.tab-btn');
-
-  function renderMenu(tab){
-    menuGrid.innerHTML = '';
-    menuData[tab].forEach((item, i) => {
-      const el = document.createElement('div');
-      el.className = 'menu-item';
-      el.style.animationDelay = (i * 0.08) + 's';
-      el.innerHTML = `
-        <div>
-          <div class="menu-item-name">${item.name}</div>
-          <div class="menu-item-desc">${item.desc}</div>
-        </div>
-        <div class="menu-item-price">${item.price}</div>
-      `;
-      menuGrid.appendChild(el);
-    });
-  }
-
-  tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      tabBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderMenu(btn.dataset.tab);
-    });
-  });
-
-  renderMenu('specialties');
-
-  // ---------- Reservation AJAX Submission ----------
+  // ---------- Reservation Submission ----------
   const reserveForm = document.getElementById('reserveForm');
   const formSuccess = document.getElementById('formSuccess');
   const submitBtn = document.getElementById('submitBtn');
@@ -1089,7 +1139,7 @@
     });
   });
 
-  // ---------- Set min date using East Africa Time / Local Date ----------
+  // Set min date to current local date
   const now = new Date();
   const localYear = now.getFullYear();
   const localMonth = String(now.getMonth() + 1).padStart(2, '0');
