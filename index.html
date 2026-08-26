@@ -1145,6 +1145,103 @@
   const localMonth = String(now.getMonth() + 1).padStart(2, '0');
   const localDay = String(now.getDate()).padStart(2, '0');
   document.getElementById('rDate').min = `${localYear}-${localMonth}-${localDay}`;
+  <!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+<script>
+  // 1. Firebase Configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyBz1d6Zehv5y2Jvqbhv9Y3C1gEhrcEkL0I",
+    authDomain: "totot-restaurant-15a8c.firebaseapp.com",
+    projectId: "totot-restaurant-15a8c",
+    storageBucket: "totot-restaurant-15a8c.firebasestorage.app",
+    messagingSenderId: "470989846823",
+    appId: "1:470989846823:web:08ef90ac279a66a65d5102",
+    measurementId: "G-JPPX9B2ST7"
+  };
+
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  const db = firebase.firestore();
+
+  // 2. Real-time Menu Sync from Firestore
+  db.collection('menu_items').where('available', '==', true).onSnapshot((snapshot) => {
+    const liveMenu = { specialties: [], sides: [], drinks: [] };
+    
+    snapshot.forEach(doc => {
+      const item = doc.data();
+      const cat = item.category || 'specialties';
+      if (liveMenu[cat]) {
+        liveMenu[cat].push({
+          name: item.name,
+          desc: item.description,
+          price: (item.price || 0) + ' ETB'
+        });
+      }
+    });
+
+    if (typeof menuData !== 'undefined') {
+      if (liveMenu.specialties.length) menuData.specialties = liveMenu.specialties;
+      if (liveMenu.sides.length) menuData.sides = liveMenu.sides;
+      if (liveMenu.drinks.length) menuData.drinks = liveMenu.drinks;
+      
+      const activeBtn = document.querySelector('.tab-btn.active');
+      const activeTab = activeBtn ? activeBtn.dataset.tab : 'specialties';
+      if (typeof renderMenu === 'function') {
+        renderMenu(activeTab);
+      }
+    }
+  });
+
+  // 3. Connect Reservation Form directly to Firestore
+  const reserveForm = document.getElementById('reserveForm');
+  const formSuccess = document.getElementById('formSuccess');
+  const submitBtn = document.getElementById('submitBtn');
+
+  if (reserveForm) {
+    reserveForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (submitBtn) {
+        submitBtn.textContent = 'Registering with Totot Front Desk...';
+        submitBtn.disabled = true;
+      }
+
+      const rName = document.getElementById('rName')?.value || '';
+      const rPhone = document.getElementById('rPhone')?.value || '';
+      const rGuests = document.getElementById('rGuests')?.value || '2 People';
+      const rDate = document.getElementById('rDate')?.value || '';
+      const rTime = document.getElementById('rTime')?.value || '';
+
+      const numericGuests = parseInt(rGuests) || 2;
+
+      try {
+        await db.collection('reservations').add({
+          customerName: rName,
+          contactPhone: rPhone,
+          partySize: numericGuests,
+          date: rDate,
+          time: rTime,
+          status: 'Pending',
+          isVIP: numericGuests >= 6,
+          specialRequests: 'Online booking via Consumer Website',
+          createdAt: new Date().toISOString()
+        });
+
+        if (formSuccess) formSuccess.classList.add('show');
+        if (submitBtn) submitBtn.textContent = 'Table Reserved!';
+        reserveForm.reset();
+      } catch (error) {
+        console.error('Reservation error:', error);
+        alert('Could not submit booking: ' + error.message);
+        if (submitBtn) {
+          submitBtn.textContent = 'Confirm Reservation';
+          submitBtn.disabled = false;
+        }
+      }
+    });
+  }
 </script>
 
 </body>
