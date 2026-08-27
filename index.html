@@ -6,7 +6,6 @@
 <title>Totot Kitfo — Crafted Tradition. Pure Flavor.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Apple System Fonts (SF Pro & New York System Stack) -->
 <link rel="stylesheet" href="https://developer.apple.com/fonts/system-fonts.css" />
 <style>
   :root{
@@ -348,7 +347,6 @@
   .bento{
     display:grid;
     grid-template-columns:1.15fr 1fr 1fr;
-    grid-template-rows:auto;
     gap:20px;
   }
   .bento-card{
@@ -1011,35 +1009,32 @@
   window.addEventListener('scroll', () => requestAnimationFrame(updateThread), { passive:true });
   initThreadLength();
 
-  // ---------- Default Menu Data Fallback ----------
+  // ---------- Menu State (Defaults empty until loaded from Firestore) ----------
   const menuData = {
-    specialties: [
-      { name:"Kitfo Leb (Rare)", desc:"Finely minced beef warmed in niter kibbeh and mitmita, served the traditional way.", price:"450 ETB" },
-      { name:"Kitfo Special", desc:"Our signature kitfo plated with ayib and sautéed gomen.", price:"520 ETB" },
-      { name:"Gored Gored", desc:"Cubed beef tossed in spiced clarified butter and mitmita.", price:"480 ETB" },
-      { name:"Dulet", desc:"Minced tripe, liver, and beef sautéed with onion, chili, and herbs.", price:"400 ETB" }
-    ],
-    sides: [
-      { name:"Ayib", desc:"Fresh Ethiopian cottage cheese, cool and mild.", price:"120 ETB" },
-      { name:"Gomen", desc:"Slow-cooked collard greens with garlic and onion.", price:"130 ETB" },
-      { name:"Injera Basket", desc:"Extra warm injera, made fresh daily.", price:"60 ETB" },
-      { name:"Timatim Salad", desc:"Tomato, onion, and jalapeño with a lemon dressing.", price:"110 ETB" }
-    ],
-    drinks: [
-      { name:"Coffee Ceremony", desc:"Traditional roast, grind, and brew, served table-side.", price:"250 ETB" },
-      { name:"Macchiato", desc:"Ethiopian-style espresso macchiato.", price:"90 ETB" },
-      { name:"Tej", desc:"Honey wine, house-fermented.", price:"180 ETB" },
-      { name:"Ambo Water", desc:"Ethiopian natural sparkling mineral water.", price:"70 ETB" }
-    ]
+    specialties: [],
+    sides: [],
+    drinks: []
   };
 
   const menuGrid = document.getElementById('menuGrid');
   const tabBtns = document.querySelectorAll('.tab-btn');
 
   function renderMenu(tab){
-    if (!menuGrid || !menuData[tab]) return;
+    if (!menuGrid) return;
     menuGrid.innerHTML = '';
-    menuData[tab].forEach((item, i) => {
+    const items = (menuData && menuData[tab]) ? menuData[tab] : [];
+
+    if (items.length === 0) {
+      menuGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; background: var(--charcoal); border-radius: 16px; border: 1px dashed var(--line-soft);">
+          <p style="font-family: var(--font-serif); font-size: 18px; color: var(--off-white); margin-bottom: 8px;">No dishes currently available</p>
+          <p style="font-size: 13px; color: var(--off-white-dim); font-weight: 300;">All dishes in this category are currently turned off in the kitchen admin.</p>
+        </div>
+      `;
+      return;
+    }
+
+    items.forEach((item, i) => {
       const el = document.createElement('div');
       el.className = 'menu-item';
       el.style.animationDelay = (i * 0.08) + 's';
@@ -1090,30 +1085,30 @@
   }
   const db = firebase.firestore();
 
-  // ---------- 1. Live Menu Catalog Sync from Firestore ----------
+  // ---------- 1. Live Menu Catalog Sync from Firestore (Strict available: true) ----------
   db.collection('menu_items').where('available', '==', true).onSnapshot((snapshot) => {
-    if (!snapshot.empty) {
-      const liveCategories = { specialties: [], sides: [], drinks: [] };
-      snapshot.forEach(docSnap => {
-        const item = docSnap.data();
-        const cat = item.category || 'specialties';
-        if (liveCategories[cat]) {
-          liveCategories[cat].push({
-            name: item.name,
-            desc: item.description || '',
-            price: (item.price || 0) + ' ETB'
-          });
-        }
-      });
+    const liveCategories = { specialties: [], sides: [], drinks: [] };
 
-      if (liveCategories.specialties.length) menuData.specialties = liveCategories.specialties;
-      if (liveCategories.sides.length) menuData.sides = liveCategories.sides;
-      if (liveCategories.drinks.length) menuData.drinks = liveCategories.drinks;
+    snapshot.forEach(docSnap => {
+      const item = docSnap.data();
+      const cat = item.category || 'specialties';
+      if (liveCategories[cat]) {
+        liveCategories[cat].push({
+          name: item.name,
+          desc: item.description || '',
+          price: (item.price || 0) + ' ETB'
+        });
+      }
+    });
 
-      const activeBtn = document.querySelector('.tab-btn.active');
-      const activeTab = activeBtn ? activeBtn.dataset.tab : 'specialties';
-      renderMenu(activeTab);
-    }
+    // Directly overwrite menuData with strictly active items
+    menuData.specialties = liveCategories.specialties;
+    menuData.sides = liveCategories.sides;
+    menuData.drinks = liveCategories.drinks;
+
+    const activeBtn = document.querySelector('.tab-btn.active');
+    const activeTab = activeBtn ? activeBtn.dataset.tab : 'specialties';
+    renderMenu(activeTab);
   }, (err) => {
     console.warn('Firestore live menu stream notice:', err);
   });
@@ -1140,7 +1135,6 @@
       const numericGuests = parseInt(rGuests) || 2;
 
       try {
-        // Direct write to Firestore 'reservations' collection
         await db.collection('reservations').add({
           customerName: rName,
           contactPhone: rPhone,
